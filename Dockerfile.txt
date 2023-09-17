@@ -1,4 +1,4 @@
-FROM node:12.10.0-alpine
+FROM node:20-alpine
 
 LABEL "version"="0.1.0"
 LABEL "repository"="https://github.com/axazara/easy-s3-upload-github-action"

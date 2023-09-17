@@ -1,6 +1,6 @@
-name: "S3 Upload"
+name: "Simple S3 Upload"
 description: "Upload files and directories to S3 compatible cloud buckets"
-author: "Koray Koska <koray@koska.at>"
+author: "Axa Zara Core Dev <core.dev@axazara.io"
 runs:
   using: docker
   image: Dockerfile
