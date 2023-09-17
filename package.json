@@ -9,6 +9,6 @@
   "author": "Axa Zara Core Dev",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.1459.0"
+    "@aws-sdk/client-s3": "3.22.0"
   }
 }

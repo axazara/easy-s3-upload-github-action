@@ -1,14 +1,17 @@
-const aws = require("aws-sdk");
+
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+const REGION = process.env.S3_REGION || "us-east-1";
 const fs = require("fs").promises;
 const path = require("path");
 
 const initializeS3 = () => {
-  const spacesEndpoint = new aws.Endpoint(process.env.S3_ENDPOINT);
-  return new aws.S3({
-    endpoint: spacesEndpoint,
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-  });
+ return new S3Client({
+    region: process.env.S3_REGION,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    }
+  })
 };
 
 const uploadToS3 = async (s3, fileName, fileContent, destination = null) => {
@@ -23,7 +26,7 @@ const uploadToS3 = async (s3, fileName, fileContent, destination = null) => {
   }
 
   try {
-    const { Location } = await s3.upload(params).promise();
+    const { Location } = await s3.send(new PutObjectCommand(params));
     console.log(`File uploaded successfully. ${Location}`);
   } catch (err) {
     throw new Error(`File upload failed: ${err.message}`);
@@ -39,7 +42,7 @@ const uploadFile = async (s3, filePath) => {
       await Promise.all(files.map(file => uploadFile(s3, path.join(filePath, file))));
     } else {
       const fileContent = await fs.readFile(filePath);
-      const destination = process.env.S3_DESTINATION  || path.join(process.env.S3_PREFIX || "", filePath);
+      const destination = process.env.S3_DESTINATION ? process.env.S3_DESTINATION : path.join(process.env.S3_PREFIX || "", filePath);
       await uploadToS3(s3, path.normalize(filePath), fileContent, destination);
     }
   } catch (err) {
