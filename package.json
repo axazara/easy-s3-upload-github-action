@@ -1,0 +1,14 @@
+{
+  "name": "easy-s3-upload-github-action",
+  "version": "0.1.0",
+  "description": "An simple S3 file and folder uploader Github Action",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Axa Zara Core Dev",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.1459.0"
+  }
+}
