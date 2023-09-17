@@ -1,35 +1,55 @@
-
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-const REGION = process.env.S3_REGION || "us-east-1";
+const {
+  S3Client,
+  PutObjectCommand
+} = require("@aws-sdk/client-s3");
 const fs = require("fs").promises;
 const path = require("path");
 
+const {
+  S3_REGION,
+  S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY,
+  S3_BUCKET,
+  S3_PREFIX,
+  S3_ACL,
+  FILE,
+  S3_ENDPOINT
+} = process.env;
+
 const initializeS3 = () => {
- return new S3Client({
-    region: process.env.S3_REGION,
+  return new S3Client({
+    endpoint: S3_ENDPOINT || undefined,
+    region: S3_REGION || "us-east-1",
+    forcePathStyle: true,
     credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      accessKeyId: S3_ACCESS_KEY_ID,
+      secretAccessKey: S3_SECRET_ACCESS_KEY,
     }
   })
 };
 
-const uploadToS3 = async (s3, fileName, fileContent, destination = null) => {
+const uploadToS3 = async (s3, fileName, fileContent) => {
   const params = {
-    Bucket: process.env.S3_BUCKET,
-    Key: destination ? destination : path.join(process.env.S3_PREFIX || "", fileName),
+    Bucket: S3_BUCKET,
+    Key: path.join(S3_PREFIX || "", fileName),
     Body: fileContent,
   };
 
-  if (process.env.S3_ACL) {
-    params.ACL = process.env.S3_ACL;
+  if (S3_ACL) {
+    params.ACL = S3_ACL;
   }
 
+  console.log(fileContent);
+
   try {
-    const { Location } = await s3.send(new PutObjectCommand(params));
-    console.log(`File uploaded successfully. ${Location}`);
+     await s3.send(new PutObjectCommand(params));
+    console.log(`File uploaded successfully.!`);
   } catch (err) {
-    throw new Error(`File upload failed: ${err.message}`);
+    if (err.message) {
+      throw new Error(`File upload failed: ${err.message || err}`);
+    } else {
+      console.error(err);
+    }
   }
 };
 
@@ -42,8 +62,7 @@ const uploadFile = async (s3, filePath) => {
       await Promise.all(files.map(file => uploadFile(s3, path.join(filePath, file))));
     } else {
       const fileContent = await fs.readFile(filePath);
-      const destination = process.env.S3_DESTINATION ? process.env.S3_DESTINATION : path.join(process.env.S3_PREFIX || "", filePath);
-      await uploadToS3(s3, path.normalize(filePath), fileContent, destination);
+      await uploadToS3(s3, path.basename(filePath), fileContent);
     }
   } catch (err) {
     console.error(`Error processing ${filePath}: ${err.message}`);
@@ -52,7 +71,7 @@ const uploadFile = async (s3, filePath) => {
 
 const main = async () => {
   const s3 = initializeS3();
-  const filePath = process.env.FILE;
+  const filePath = FILE;
 
   if (!filePath) {
     console.error("FILE environment variable not set. Exiting.");
