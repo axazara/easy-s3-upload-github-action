@@ -4,6 +4,7 @@ const {
 } = require("@aws-sdk/client-s3");
 const fs = require("fs").promises;
 const path = require("path");
+const mimeTypes = require('mime-types');
 
 const {
   S3_REGION,
@@ -13,8 +14,11 @@ const {
   S3_PREFIX,
   S3_ACL,
   FILE,
-  S3_ENDPOINT
+  S3_ENDPOINT,
+  S3_PRESERVE_DIR
 } = process.env;
+
+const invalidFileNames = ['.', './', '.DS_Store'];
 
 const initializeS3 = () => {
   return new S3Client({
@@ -33,6 +37,7 @@ const uploadToS3 = async (s3, fileName, fileContent) => {
     Bucket: S3_BUCKET,
     Key: path.join(S3_PREFIX || "", fileName),
     Body: fileContent,
+    ContentType: mimeTypes.lookup(path.extname(fileName).substring(1))
   };
 
   if (S3_ACL) {
@@ -52,7 +57,15 @@ const uploadFile = async (s3, filePath) => {
       await Promise.all(files.map(file => uploadFile(s3, path.join(filePath, file))));
     } else {
       const fileContent = await fs.readFile(filePath);
-      await uploadToS3(s3, path.basename(filePath), fileContent);
+      const fileName = S3_PRESERVE_DIR === 'preserve'
+        ? path.normalize(filePath)
+        : path.basename(filePath);
+
+      if (invalidFileNames.includes(path.basename(filePath))) {
+        console.log(`Skiping invalid filename: ${fileName}`);
+      }
+      console.log(`Uploading ${fileName}`);
+      await uploadToS3(s3, fileName, fileContent);
     }
   } catch (err) {
     throw Error(`Error processing ${filePath}: ${err.message}`);
