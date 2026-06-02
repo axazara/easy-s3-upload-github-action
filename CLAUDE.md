@@ -2,6 +2,59 @@
 
 Guidance for Claude Code and other AI agents working in this repository.
 
+## Project overview
+
+This repository is a Docker-based GitHub Action that uploads files or directories to any S3-compatible cloud storage bucket (AWS S3, Cloudflare R2, etc.). It is consumed by other repositories' CI/CD workflows via `uses: axazara/easy-s3-upload-github-action@main`. The action is written in Node.js and runs inside a Docker container built from the included `Dockerfile`.
+
+## Tech stack
+
+- Node.js 20 (Alpine-based Docker image)
+- `@aws-sdk/client-s3` v3.1054.0 — S3 API client
+- Docker — action runtime (type: `docker` in `action.yml`)
+- GitHub Actions — distribution and execution platform
+
+## Getting started
+
+```bash
+npm install
+```
+
+To build and test the Docker image locally:
+
+```bash
+docker build -t easy-s3-upload-github-action .
+docker run --rm \
+  -e FILE=./path/to/file \
+  -e S3_BUCKET=my-bucket \
+  -e S3_ACCESS_KEY_ID=xxx \
+  -e S3_SECRET_ACCESS_KEY=xxx \
+  -e S3_ENDPOINT=xxxx.r2.cloudflarestorage.com/xxxx \
+  easy-s3-upload-github-action
+```
+
+## Common commands
+
+| Task | Command |
+|---|---|
+| Install dependencies | `npm install` |
+| Run action locally | `node index.js` (requires env vars set) |
+
+## Architecture
+
+- `action.yml` — GitHub Action metadata; declares the action uses Docker with `Dockerfile` as the image.
+- `Dockerfile` — Builds a `node:20-alpine` image, copies source files into `/app`, runs `npm install`, and sets `entrypoint.sh` as the container entry point.
+- `entrypoint.sh` — Minimal shell wrapper that executes `node /app/index.js`.
+- `index.js` — Core logic: reads environment variables (`FILE`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_REGION`, `S3_PREFIX`, `S3_ACL`), initializes an `S3Client` with optional custom endpoint and `forcePathStyle: true`, then recursively walks `FILE` (file or directory) and uploads each item via `PutObjectCommand`.
+
+## Conventions
+
+- All configuration is passed exclusively through environment variables — no input declarations in `action.yml` beyond `runs.using: docker`.
+- When uploading a directory, all files are uploaded concurrently via `Promise.all`; subdirectory recursion is supported.
+- `S3_ACL` is optional; omit it for buckets (e.g. Cloudflare R2) that do not support ACLs.
+- `S3_ENDPOINT` should be provided for non-AWS providers; `S3_REGION` defaults to `us-east-1` if omitted.
+- There are no automated tests (`npm test` exits with an error); test changes by building the Docker image and running it locally with real or mock credentials.
+- Dependabot is configured to keep npm dependencies and GitHub Actions references up to date weekly.
+
 ## Git Conventions
 
 ### 1. Branch names
