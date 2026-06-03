@@ -31,3 +31,21 @@ jobs:
           S3_PREFIX: 'releases/'
           VERBOSE: yes
 ```
+
+## Configuration
+
+All options are passed as environment variables.
+
+| Variable | Required | Description |
+|---|---|---|
+| `SOURCE` | yes | Path to the file or directory to upload. Directories are uploaded recursively. |
+| `S3_BUCKET` | yes | Target bucket name. |
+| `S3_ACCESS_KEY_ID` | yes | Access key id. |
+| `S3_SECRET_ACCESS_KEY` | yes | Secret access key. |
+| `S3_ENDPOINT` | no | Custom endpoint for non-AWS providers (e.g. Cloudflare R2). |
+| `S3_REGION` | no | Bucket region. Defaults to `us-east-1`. |
+| `S3_PREFIX` | no | Key prefix prepended to every uploaded object. |
+| `S3_ACL` | no | Object ACL (e.g. `public-read`). Omit for providers that do not support ACLs. |
+| `VERBOSE` | no | Set to `true`/`yes`/`1` to log each upload. Quiet by default. |
+
+> **Note:** `FILE` is still accepted as a deprecated alias for `SOURCE`. Prefer `SOURCE` going forward.

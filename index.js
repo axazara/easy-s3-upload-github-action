@@ -14,9 +14,14 @@ const {
   S3_PREFIX,
   S3_ACL,
   SOURCE,
+  FILE,
   S3_ENDPOINT,
   VERBOSE
 } = process.env;
+
+// `FILE` is the legacy name for `SOURCE`; keep it working for existing consumers.
+const source = SOURCE || FILE;
+const verbose = /^(1|true|yes|on)$/i.test(VERBOSE || '');
 
 const initializeS3 = () => {
   return new S3Client({
@@ -25,25 +30,26 @@ const initializeS3 = () => {
     forcePathStyle: true,
     credentials: {
       accessKeyId: S3_ACCESS_KEY_ID,
-      secretAccessKey: S3_SECRET_ACCESS_KEY,
+      secretAccessKey: S3_SECRET_ACCESS_KEY
     }
-  })
+  });
 };
 
 const uploadToS3 = async (s3, fileName, fileContent) => {
   const Key = path.join(S3_PREFIX || '', fileName);
   const params = {
-    Key,
     Bucket: S3_BUCKET,
+    Key,
     Body: fileContent,
-    ContentType: lookup(fileName) || 'text/plain',
+    ContentType: lookup(fileName) || 'application/octet-stream',
     ...(S3_ACL && {
       ACL: S3_ACL
     })
   };
 
   await s3.send(new PutObjectCommand(params));
-  if (VERBOSE) {
+
+  if (verbose) {
     console.info(`File "${Key}" was uploaded successfully.`);
   }
 };
@@ -65,16 +71,19 @@ const uploadFile = async (s3, filePath) => {
 };
 
 const main = async () => {
-  if (VERBOSE) {
+  if (!source) {
+    throw Error('SOURCE environment variable not set. Exiting.');
+  }
+
+  if (verbose) {
     console.info('Uploading files to S3...');
   }
 
-  if (!SOURCE) {
-    throw Error(`SOURCE environment variable not set. Exiting. Provided: ${filePath}`);
-  }
-  
   const s3 = initializeS3();
-  await uploadFile(s3, SOURCE);
+  await uploadFile(s3, source);
 };
 
-main().then(() => {});
+main().catch(err => {
+  console.error(err.message);
+  process.exit(1);
+});
