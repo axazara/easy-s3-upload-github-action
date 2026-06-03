@@ -24,7 +24,7 @@ To build and test the Docker image locally:
 ```bash
 docker build -t easy-s3-upload-github-action .
 docker run --rm \
-  -e FILE=./path/to/file \
+  -e SOURCE=./path/to/file \
   -e S3_BUCKET=my-bucket \
   -e S3_ACCESS_KEY_ID=xxx \
   -e S3_SECRET_ACCESS_KEY=xxx \
@@ -44,7 +44,7 @@ docker run --rm \
 - `action.yml` — GitHub Action metadata; declares the action uses Docker with `Dockerfile` as the image.
 - `Dockerfile` — Builds a `node:20-alpine` image, copies source files into `/app`, runs `npm install`, and sets `entrypoint.sh` as the container entry point.
 - `entrypoint.sh` — Minimal shell wrapper that executes `node /app/index.js`.
-- `index.js` — Core logic: reads environment variables (`FILE`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_REGION`, `S3_PREFIX`, `S3_ACL`), initializes an `S3Client` with optional custom endpoint and `forcePathStyle: true`, then recursively walks `FILE` (file or directory) and uploads each item via `PutObjectCommand`.
+- `index.js` — Core logic: reads environment variables (`SOURCE`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_REGION`, `S3_PREFIX`, `S3_ACL`, `VERBOSE`), initializes an `S3Client` with optional custom endpoint and `forcePathStyle: true`, then recursively walks `SOURCE` (file or directory) and uploads each item via `PutObjectCommand` with a `ContentType` inferred from the file extension. `FILE` is accepted as a deprecated alias for `SOURCE`.
 
 ## Conventions
 
